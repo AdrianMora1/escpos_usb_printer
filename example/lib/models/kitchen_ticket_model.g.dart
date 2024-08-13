@@ -14,6 +14,7 @@ KitchenTicketModel _$KitchenTicketModelFromJson(Map<String, dynamic> json) =>
           .toList(),
       order: (json['order'] as num).toInt(),
       date: json['date'] as String,
+      isOffline: json['is_offline'] as bool,
     );
 
 Map<String, dynamic> _$KitchenTicketModelToJson(KitchenTicketModel instance) =>
@@ -21,4 +22,5 @@ Map<String, dynamic> _$KitchenTicketModelToJson(KitchenTicketModel instance) =>
       'products': instance.products.map((e) => e.toJson()).toList(),
       'order': instance.order,
       'date': instance.date,
+      'is_offline': instance.isOffline,
     };

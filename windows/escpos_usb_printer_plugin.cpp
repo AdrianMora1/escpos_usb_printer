@@ -611,8 +611,66 @@ namespace escpos_usb_printer
                 }
             }
         }
-        else
-        {
+        else if(method_call.method_name().compare("printKitchenTicket") == 0){
+{
+            if (isUsbServiceInitialized == false)
+            {
+                isUsbServiceInitialized = InitializeUsbService();
+            }
+            if (isUsbServiceInitialized == false)
+            {
+                result->Error(
+                    "1000",
+                    "Printer usb service is not initialized",
+                    flutter::EncodableValue("Make sure that the printer is ON and connected to this device"));
+                return;
+            }
+            else
+            {
+                const auto *args = std::get_if<flutter::EncodableMap>(method_call.arguments());
+                if (!args)
+                {
+                    result->Error("InvalidArguments", "Expected map as argument");
+                    return;
+                }
+                std::vector<uint8_t> imageBytes;
+                auto imageIt = args->find(flutter::EncodableValue("image"));
+                const auto &imageVariant = imageIt->second;
+                if (std::holds_alternative<std::vector<uint8_t>>(imageVariant))
+                {
+                    imageBytes = std::get<std::vector<uint8_t>>(imageVariant);
+                }
+                else
+                {
+                    result->Error("InvalidArguments", "Expected image list of bytes as argument");
+                }
+
+                auto jsonIt = args->find(flutter::EncodableValue("json"));
+                if (jsonIt == args->end() || !std::holds_alternative<std::string>(jsonIt->second))
+                {
+                    result->Error("InvalidArguments", "Expected JSON string as argument");
+                    return;
+                }
+
+                const std::string &jsonStr = std::get<std::string>(jsonIt->second);
+                try
+                {
+                    bool success = PrintTicket(imageBytes, jsonStr);
+                    result->Success(flutter::EncodableValue(success));
+                }
+                catch (const nlohmann::json::parse_error &e)
+                {
+                    std::cerr << "JSON parsing error: " << e.what() << '\n';
+                    result->Error("InvalidArguments", "Error parsering the JSON");
+                }
+                catch (const nlohmann::json::type_error &e)
+                {
+                    std::cerr << "JSON type error: " << e.what() << '\n';
+                }
+            }
+        }
+        }
+        else {
             result->NotImplemented();
         }
     }

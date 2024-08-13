@@ -21,11 +21,15 @@ class KitchenTicketModel {
   @JsonKey(name: "date")
   final String date;
 
-  const KitchenTicketModel({
-    required this.products,
-    required this.order,
-    required this.date,
-  });
+  @override
+  @JsonKey(name: "is_offline")
+  final bool isOffline;
+
+  const KitchenTicketModel(
+      {required this.products,
+      required this.order,
+      required this.date,
+      required this.isOffline});
 
   factory KitchenTicketModel.fromJson(Map<String, dynamic> json) =>
       _$KitchenTicketModelFromJson(json);
