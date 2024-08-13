@@ -36,4 +36,9 @@ abstract class EscposUsbPrinterPlatform extends PlatformInterface {
   Future<bool?> printTicket(Uint8List imageBytes, Map<String, dynamic> json) {
     throw UnimplementedError('printTicket() has not been implemented.');
   }
+
+  Future<bool?> printKitchenTicket(
+      Uint8List imageBytes, Map<String, dynamic> json) {
+    throw UnimplementedError('printTicket() has not been implemented.');
+  }
 }

@@ -14,4 +14,10 @@ class EscposUsbPrinter {
   Future<bool?> printTicket(Uint8List imageBytes, Map<String, dynamic> json) {
     return EscposUsbPrinterPlatform.instance.printTicket(imageBytes, json);
   }
+
+  Future<bool?> printKitchenTicket(
+      Uint8List imageBytes, Map<String, dynamic> json) {
+    return EscposUsbPrinterPlatform.instance
+        .printKitchenTicket(imageBytes, json);
+  }
 }

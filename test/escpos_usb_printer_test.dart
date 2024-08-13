@@ -18,21 +18,27 @@ class MockEscposUsbPrinterPlatform
   @override
   Future<bool?> printTicket(Uint8List imageBytes, Map<String, dynamic> json) =>
       Future.value(true);
-}
 
-void main() {
-  final EscposUsbPrinterPlatform initialPlatform =
-      EscposUsbPrinterPlatform.instance;
+  @override
+  Future<bool?> printKitchenTicket(
+          Uint8List imageBytes, Map<String, dynamic> json) =>
+      Future.value(true);
 
-  test('$MethodChannelEscposUsbPrinter is the default instance', () {
-    expect(initialPlatform, isInstanceOf<MethodChannelEscposUsbPrinter>());
-  });
+  void main() {
+    final EscposUsbPrinterPlatform initialPlatform =
+        EscposUsbPrinterPlatform.instance;
 
-  test('getPlatformVersion', () async {
-    EscposUsbPrinter escposUsbPrinterPlugin = EscposUsbPrinter();
-    MockEscposUsbPrinterPlatform fakePlatform = MockEscposUsbPrinterPlatform();
-    EscposUsbPrinterPlatform.instance = fakePlatform;
+    test('$MethodChannelEscposUsbPrinter is the default instance', () {
+      expect(initialPlatform, isInstanceOf<MethodChannelEscposUsbPrinter>());
+    });
 
-    expect(await escposUsbPrinterPlugin.initService(), '42');
-  });
+    test('getPlatformVersion', () async {
+      EscposUsbPrinter escposUsbPrinterPlugin = EscposUsbPrinter();
+      MockEscposUsbPrinterPlatform fakePlatform =
+          MockEscposUsbPrinterPlatform();
+      EscposUsbPrinterPlatform.instance = fakePlatform;
+
+      expect(await escposUsbPrinterPlugin.initService(), '42');
+    });
+  }
 }

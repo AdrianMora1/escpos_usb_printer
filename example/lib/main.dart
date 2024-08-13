@@ -1,6 +1,6 @@
-import 'package:escpos_usb_printer_example/branch_info_model.dart';
-import 'package:escpos_usb_printer_example/products_model.dart';
-import 'package:escpos_usb_printer_example/ticket_model.dart';
+import 'package:escpos_usb_printer_example/models/branch_info_model.dart';
+import 'package:escpos_usb_printer_example/models/products_model.dart';
+import 'package:escpos_usb_printer_example/models/ticket_model.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -65,6 +65,32 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> printTicket() async {
+    TicketModel ticket = const TicketModel(
+        branchInfoModel: BranchInfoModel(
+            address: "Some place in the world", name: "Downtown branch"),
+        order: 10,
+        productsModel: [
+          ProductsModel(price: 20, productName: "Café Américano", quantity: 2),
+          ProductsModel(price: 10, productName: "Cafrísimo", quantity: 1)
+        ],
+        total: 10,
+        isOffline: false);
+    final Uint8List imageBytes = await loadImageBytes('assets/logoBw.bmp');
+    bool isTicketPrinted;
+    try {
+      isTicketPrinted = await _escposUsbPrinterPlugin.printTicket(
+              imageBytes, ticket.toJson()) ??
+          false;
+    } on PlatformException {
+      isTicketPrinted = false;
+    }
+    if (!mounted) return;
+    setState(() {
+      _isTicketPrinted = isTicketPrinted;
+    });
+  }
+
+  Future<void> printKitchenTicket() async {
     TicketModel ticket = const TicketModel(
         branchInfoModel: BranchInfoModel(
             address: "Some place in the world", name: "Downtown branch"),
