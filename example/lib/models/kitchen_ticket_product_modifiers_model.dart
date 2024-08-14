@@ -9,9 +9,12 @@ class KitchenTicketProductModifiersModel {
   @JsonKey(name: "name")
   final String name;
 
-  const KitchenTicketProductModifiersModel({
-    required this.name,
-  });
+  @override
+  @JsonKey(name: "quantity")
+  final int quantity;
+
+  const KitchenTicketProductModifiersModel(
+      {required this.name, required this.quantity});
 
   factory KitchenTicketProductModifiersModel.fromJson(
           Map<String, dynamic> json) =>

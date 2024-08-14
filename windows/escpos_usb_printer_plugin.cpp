@@ -324,19 +324,15 @@ bool print_json_ticket(const std::string &json_str)
     return true;
 }
 
-bool print_json_kitchen_ticket(const std::string &json_str)
-{
+bool print_json_kitchen_ticket(const std::string &json_str) {
     auto json = nlohmann::json::parse(json_str);
 
     // Print Order Number
     std::string order_number;
-    if (json["is_offline"].get<bool>())
-    {
+    if (json["is_offline"].get<bool>()) {
         // if is_offline is true the field is called Folio
         order_number = "\n\nFolio: #" + std::to_string(json["order"].get<int>()) + "\n\n";
-    }
-    else
-    {
+    } else {
         // if is_offline is false the field is called Orden
         order_number = "\n\nOrden: #" + std::to_string(json["order"].get<int>()) + "\n\n";
     }
@@ -346,67 +342,83 @@ bool print_json_kitchen_ticket(const std::string &json_str)
 
     write_text_to_printer(ROW_MIDDLE_LINES);
 
-    write_text_to_printer("Producto             Cantidad             Precio\n\n");
+    // Print header
+    std::string header = "Producto                                Cantidad";
+    write_text_to_printer(header + "\n");
 
     // Print Products
-    for (const auto &product : json["products"])
-    {
+    for (const auto &product : json["products"]) {
+        write_text_to_printer("\n");
         std::ostringstream line_stream;
 
         std::string productName = product["product_name"].get<std::string>();
-        int realLengthProductName = countCharacters(productName);
+        int quantity = product["quantity"].get<int>();
 
-        int widthAdjustment = width_name - (realLengthProductName - static_cast<int>(productName.length()));
-        int adjustedWidthName = (std::max)(widthAdjustment, 0);
+        // Calcular el ancho de espacio disponible
+        int product_name_width = 43; // Ajusta este valor según el tamaño que desees para el nombre del producto
+        int quantity_width = 5;     // Ajusta este valor según el tamaño que desees para la cantidad
 
-        line_stream << std::left << std::setw(adjustedWidthName) << productName
-                    << std::left << std::setw(width_quantity) << product["quantity"].get<int>();
+        // Validar que los tamaños no excedan el ancho total
+        if (productName.length() > product_name_width) {
+            productName = productName.substr(0, product_name_width);
+        }
 
-        // Creamos un nuevo stringstream para el precio con el signo $
-        std::ostringstream price_stream;
-        price_stream << "$" << std::fixed << std::setprecision(2) << product["price"].get<double>();
-        std::string price_with_symbol = price_stream.str();
+        // Ajustar el ancho de la cantidad
+        std::ostringstream quantity_stream;
+        quantity_stream << std::left << std::setw(quantity_width) << quantity;
+        std::string quantity_str = quantity_stream.str();
 
-        // Ajustamos el precio a la derecha, teniendo en cuenta la longitud del signo $
-        // Restamos 1 del ancho total porque el signo $ no debe ocupar espacio adicional
-        line_stream << std::right << std::setw(width_price) << price_with_symbol;
+        // Rellenar el ancho de producto_name con espacios en blanco para ajustar la alineación
+        std::ostringstream product_stream;
+        product_stream << std::left << std::setw(product_name_width) << productName;
+        std::string product_str = product_stream.str();
 
-        // Finalizamos la linea con un salto de linea
-        line_stream << "\n\n";
+        // Formatear la línea completa
+        line_stream << product_str << quantity_str << "\n";
 
-        // Enviamos la linea completa al impresor
+        // Enviar la línea completa al impresor
         write_text_to_printer(line_stream.str());
+
+        // Print modifiers if they exist
+        if (product.contains("modifiers")) {
+            for (const auto &modifier : product["modifiers"]) {
+                std::string modifierName = modifier["name"].get<std::string>();
+                int modifierQuantity = modifier.contains("quantity") ? modifier["quantity"].get<int>() : 1;
+
+                // Formatear el modificador
+                std::ostringstream modifier_line_stream;
+
+                // Ajustar el nombre del modificador y la cantidad
+                std::ostringstream modifier_name_stream;
+                modifier_name_stream << std::left << std::setw(product_name_width) << ("    " + modifierName);
+                std::string modifier_name_str = modifier_name_stream.str();
+
+                std::ostringstream modifier_quantity_stream;
+                modifier_quantity_stream << std::left << std::setw(quantity_width) << modifierQuantity;
+                std::string modifier_quantity_str = modifier_quantity_stream.str();
+
+                // Formatear la línea completa del modificador
+                modifier_line_stream << modifier_name_str << modifier_quantity_str << "\n";
+
+                // Enviar la línea completa del modificador al impresor
+                write_text_to_printer(modifier_line_stream.str());
+            }
+        }        
     }
+
     write_text_to_printer("\n\n");
     write_text_to_printer(ROW_MIDDLE_LINES);
     write_text_to_printer("\n\n");
-    // Print Total
-    std::ostringstream total_stream;
-    const std::string total_label = "Total: $"; // Etiqueta para el total.
-
-    // Aqui formateamos el total como un string con dos decimales.
-    std::ostringstream price_stream;
-    price_stream << std::fixed << std::setprecision(2) << json["total"].get<double>();
-    std::string price_with_symbol = price_stream.str();
-
-    // Calculamos el ancho que ocupara el precio y el "Total: $" juntos.
-    size_t total_length = total_label.length() + price_with_symbol.length();
-
-    // Asegurarse de que la linea total, incluyendo el "Total:", el precio y los espacios adicionales, no exceda los 48 caracteres.
-    total_stream << std::right << std::setw(48 - total_length) << "" << total_label << price_with_symbol << "\n";
-
-    // Finalmente, enviamos la linea del total al impresor.
-    write_text_to_printer(total_stream.str());
 
     std::vector<uint8_t> cmdFeedPaper = composeCmdFeedPaper(15);
     write_to_printer(cmdFeedPaper);
 
     std::vector<uint8_t> cmdCut = composeCmdCut(1);
-
     write_to_printer(cmdCut);
 
     return true;
 }
+
 
 // Function to determine if a pixel's color should be printed
 bool should_print_color(uint32_t col)

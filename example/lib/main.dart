@@ -1,4 +1,7 @@
 import 'package:escpos_usb_printer_example/models/branch_info_model.dart';
+import 'package:escpos_usb_printer_example/models/kitchen_ticket_model.dart';
+import 'package:escpos_usb_printer_example/models/kitchen_ticket_product_model.dart';
+import 'package:escpos_usb_printer_example/models/kitchen_ticket_product_modifiers_model.dart';
 import 'package:escpos_usb_printer_example/models/products_model.dart';
 import 'package:escpos_usb_printer_example/models/ticket_model.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +26,7 @@ class _MyAppState extends State<MyApp> {
   bool _initializedService = false;
   String _printerStatus = "Not Initialized";
   bool _isTicketPrinted = false;
+  bool _isKitchenTicketPrinted = false;
 
   @override
   void initState() {
@@ -91,28 +95,43 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> printKitchenTicket() async {
-    TicketModel ticket = const TicketModel(
-        branchInfoModel: BranchInfoModel(
-            address: "Some place in the world", name: "Downtown branch"),
-        order: 10,
-        productsModel: [
-          ProductsModel(price: 20, productName: "Café Américano", quantity: 2),
-          ProductsModel(price: 10, productName: "Cafrísimo", quantity: 1)
+    KitchenTicketModel ticket = KitchenTicketModel(
+        date: DateTime.now().toString(),
+        order: 1,
+        products: [
+          const KitchenTicketProductModel(
+              productName: "Cafe Americano",
+              quantity: 1,
+              modifiers: [
+                KitchenTicketProductModifiersModel(name: "Oreo", quantity: 2),
+                KitchenTicketProductModifiersModel(
+                    name: "Shot extra", quantity: 1)
+              ]),
+          const KitchenTicketProductModel(
+              productName: "Cafe Latte",
+              quantity: 1,
+              modifiers: [
+                KitchenTicketProductModifiersModel(
+                    name: "Caramelo", quantity: 2),
+              ]),
+          const KitchenTicketProductModel(
+            productName: "Galleta",
+            quantity: 1,
+          ),
         ],
-        total: 10,
         isOffline: false);
     final Uint8List imageBytes = await loadImageBytes('assets/logoBw.bmp');
-    bool isTicketPrinted;
+    bool isKitchenTicketPrinted;
     try {
-      isTicketPrinted = await _escposUsbPrinterPlugin.printTicket(
+      isKitchenTicketPrinted = await _escposUsbPrinterPlugin.printKitchenTicket(
               imageBytes, ticket.toJson()) ??
           false;
     } on PlatformException {
-      isTicketPrinted = false;
+      isKitchenTicketPrinted = false;
     }
     if (!mounted) return;
     setState(() {
-      _isTicketPrinted = isTicketPrinted;
+      _isKitchenTicketPrinted = isKitchenTicketPrinted;
     });
   }
 
@@ -147,13 +166,21 @@ class _MyAppState extends State<MyApp> {
                 },
                 child: const Text("Get Printer Status")),
             Center(
-              child: Text('Ticket printed: $_isTicketPrinted\n'),
+              child: Text('Ticket printed: $_isTicketPrinted'),
             ),
             ElevatedButton(
                 onPressed: () {
                   printTicket();
                 },
-                child: const Text("Print Ticket"))
+                child: const Text("Print Ticket")),
+            Center(
+              child: Text('Ticket printed: $_isKitchenTicketPrinted'),
+            ),
+            ElevatedButton(
+                onPressed: () {
+                  printKitchenTicket();
+                },
+                child: const Text("Print Kitchen Ticket"))
           ],
         ),
       ),
