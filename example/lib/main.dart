@@ -3,7 +3,11 @@ import 'package:escpos_usb_printer_example/models/kitchen_ticket_model.dart';
 import 'package:escpos_usb_printer_example/models/kitchen_ticket_product_model.dart';
 import 'package:escpos_usb_printer_example/models/kitchen_ticket_product_modifiers_model.dart';
 import 'package:escpos_usb_printer_example/models/products_model.dart';
+import 'package:escpos_usb_printer_example/models/session_info_model.dart';
 import 'package:escpos_usb_printer_example/models/ticket_model.dart';
+import 'package:escpos_usb_printer_example/models/ticket_payment_method_model.dart';
+import 'package:escpos_usb_printer_example/models/ticket_product_modifier_model.dart';
+import 'package:escpos_usb_printer_example/models/ticket_products_model.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -70,14 +74,55 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> printTicket() async {
     TicketModel ticket = const TicketModel(
-        branchInfoModel: BranchInfoModel(
-            address: "Some place in the world", name: "Downtown branch"),
-        order: 10,
-        productsModel: [
-          ProductsModel(price: 20, productName: "Café Américano", quantity: 2),
-          ProductsModel(price: 10, productName: "Cafrísimo", quantity: 1)
+        branchInfo: BranchInfoModel(
+            address:
+                "Plaza Galerias, Blvrd Antonio Ortiz Mena 201-A, Presidentes, C.P 31210, Chihuahua",
+            city: "Chihuahua",
+            name: "Plaza Galerias",
+            phone: "6141234567",
+            postalCode: 31210),
+        session: SessionInfoModel(
+            line: "Barra", lineId: 1, sessionId: 1, user: "Admin"),
+        products: [
+          TicketProductsModel(
+              price: 80,
+              productName: "Cafe Americano",
+              quantity: 1,
+              modifier: [
+                TicketProductModifierModel(
+                    price: 60, name: "Chico-12oz", quantity: 1),
+                TicketProductModifierModel(
+                    price: 10, name: "Oreo", quantity: 1),
+                TicketProductModifierModel(
+                    price: 10, name: "Shot Extra Espresso", quantity: 1)
+              ]),
+          TicketProductsModel(
+            price: 40,
+            productName: "Galleta",
+            quantity: 1,
+          ),
+          TicketProductsModel(
+              price: 60,
+              productName: "Cafe Latte",
+              quantity: 1,
+              modifier: [
+                TicketProductModifierModel(
+                    price: 60, name: "Chico-12oz", quantity: 1),
+              ]),
         ],
-        total: 10,
+        subTotal: 150.2,
+        tax: 29.8,
+        discount: 0,
+        total: 180,
+        paymentMethods: [
+          TicketPaymentMethodModel(amount: 150, payment: "CARD"),
+          TicketPaymentMethodModel(amount: 30, payment: "CASH"),
+        ],
+        totalInWords: "Ciento ochenta",
+        urlInvoice: "https://qa.d2h666eo2e1r2p.amplifyapp.com",
+        orderId: 10,
+        rfc: "CTE180828E84",
+        date: "15/Aug/2024 04:14",
         isOffline: false);
     final Uint8List imageBytes = await loadImageBytes('assets/logoBw.bmp');
     bool isTicketPrinted;

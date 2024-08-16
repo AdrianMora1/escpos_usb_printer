@@ -13,7 +13,24 @@ class BranchInfoModel {
   @JsonKey(name: "address")
   final String address;
 
-  const BranchInfoModel({required this.address, required this.name});
+  @override
+  @JsonKey(name: "city")
+  final String city;
+
+  @override
+  @JsonKey(name: "postal_code")
+  final int postalCode;
+
+  @override
+  @JsonKey(name: "phone")
+  final String phone;
+
+  const BranchInfoModel(
+      {required this.address,
+      required this.name,
+      required this.city,
+      required this.phone,
+      required this.postalCode});
 
   factory BranchInfoModel.fromJson(Map<String, dynamic> json) =>
       _$BranchInfoModelFromJson(json);

@@ -7,21 +7,44 @@ part of 'ticket_model.dart';
 // **************************************************************************
 
 TicketModel _$TicketModelFromJson(Map<String, dynamic> json) => TicketModel(
-      branchInfoModel:
+      branchInfo:
           BranchInfoModel.fromJson(json['branch'] as Map<String, dynamic>),
-      order: (json['order'] as num).toInt(),
-      productsModel: (json['products'] as List<dynamic>)
-          .map((e) => ProductsModel.fromJson(e as Map<String, dynamic>))
+      orderId: (json['order'] as num).toInt(),
+      products: (json['products'] as List<dynamic>)
+          .map((e) => TicketProductsModel.fromJson(e as Map<String, dynamic>))
           .toList(),
       total: (json['total'] as num).toDouble(),
-      isOffline: json['is_offline'] as bool,
+      isOffline: json['is_offline'] as bool?,
+      session:
+          SessionInfoModel.fromJson(json['session'] as Map<String, dynamic>),
+      discount: (json['discount'] as num).toDouble(),
+      subTotal: (json['subtotal'] as num).toDouble(),
+      tax: (json['tax'] as num).toDouble(),
+      urlInvoice: json['url_invoice'] as String,
+      paymentMethods: (json['payment_methods'] as List<dynamic>)
+          .map((e) =>
+              TicketPaymentMethodModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      totalInWords: json['total_in_words'] as String,
+      date: json['date'] as String,
+      rfc: json['rfc'] as String,
     );
 
 Map<String, dynamic> _$TicketModelToJson(TicketModel instance) =>
     <String, dynamic>{
-      'branch': instance.branchInfoModel.toJson(),
-      'products': instance.productsModel.map((e) => e.toJson()).toList(),
+      'branch': instance.branchInfo.toJson(),
+      'session': instance.session.toJson(),
+      'products': instance.products.map((e) => e.toJson()).toList(),
+      'subtotal': instance.subTotal,
+      'tax': instance.tax,
+      'discount': instance.discount,
       'total': instance.total,
-      'order': instance.order,
+      'payment_methods':
+          instance.paymentMethods.map((e) => e.toJson()).toList(),
+      'total_in_words': instance.totalInWords,
+      'url_invoice': instance.urlInvoice,
+      'order': instance.orderId,
+      'rfc': instance.rfc,
+      'date': instance.date,
       'is_offline': instance.isOffline,
     };
