@@ -1,18 +1,18 @@
+import 'dart:async';
+
+import 'package:escpos_usb_printer/escpos_usb_printer.dart';
 import 'package:escpos_usb_printer_example/models/branch_info_model.dart';
 import 'package:escpos_usb_printer_example/models/kitchen_ticket_model.dart';
 import 'package:escpos_usb_printer_example/models/kitchen_ticket_product_model.dart';
 import 'package:escpos_usb_printer_example/models/kitchen_ticket_product_modifiers_model.dart';
-import 'package:escpos_usb_printer_example/models/products_model.dart';
+import 'package:escpos_usb_printer_example/models/offline_ticket_model.dart';
 import 'package:escpos_usb_printer_example/models/session_info_model.dart';
 import 'package:escpos_usb_printer_example/models/ticket_model.dart';
 import 'package:escpos_usb_printer_example/models/ticket_payment_method_model.dart';
 import 'package:escpos_usb_printer_example/models/ticket_product_modifier_model.dart';
 import 'package:escpos_usb_printer_example/models/ticket_products_model.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
-
 import 'package:flutter/services.dart';
-import 'package:escpos_usb_printer/escpos_usb_printer.dart';
 
 void main() {
   runApp(const MyApp());
@@ -31,6 +31,7 @@ class _MyAppState extends State<MyApp> {
   String _printerStatus = "Not Initialized";
   bool _isTicketPrinted = false;
   bool _isKitchenTicketPrinted = false;
+  bool _isOfflineTicketPrinted = false;
 
   @override
   void initState() {
@@ -180,6 +181,49 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  Future<void> printOfflineTicket() async {
+    OfflineTicketModel ticket = OfflineTicketModel(
+        branchInfo: const BranchInfoModel(
+            address: "Some place in the world", name: "Downtown branch"),
+        order: 10,
+        products: [
+          const TicketProductsModel(
+              price: 20,
+              productName: "Café Américano",
+              quantity: 2,
+              modifier: [
+                TicketProductModifierModel(
+                    price: 10, name: "Extra shot", quantity: 1),
+                TicketProductModifierModel(
+                    price: 20, name: "Esencia de vainilla", quantity: 2)
+              ]),
+          const TicketProductsModel(
+              price: 10,
+              productName: "Cafrísimo",
+              quantity: 1,
+              modifier: [
+                TicketProductModifierModel(
+                    price: 10, name: "Azucar extra", quantity: 1)
+              ])
+        ],
+        total: 10,
+        isOffline: false,
+        date: DateTime.now().toString());
+    final Uint8List imageBytes = await loadImageBytes('assets/logoBw.bmp');
+    bool isOfflineTicketPrinted;
+    try {
+      isOfflineTicketPrinted = await _escposUsbPrinterPlugin.printOfflineTicket(
+              imageBytes, ticket.toJson()) ??
+          false;
+    } on PlatformException {
+      isOfflineTicketPrinted = false;
+    }
+    if (!mounted) return;
+    setState(() {
+      _isOfflineTicketPrinted = isOfflineTicketPrinted;
+    });
+  }
+
   Future<Uint8List> loadImageBytes(String path) async {
     final ByteData data = await rootBundle.load(path);
     return data.buffer.asUint8List();
@@ -193,6 +237,7 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Center(
               child: Text('Service initialized: $_initializedService\n'),
@@ -225,7 +270,15 @@ class _MyAppState extends State<MyApp> {
                 onPressed: () {
                   printKitchenTicket();
                 },
-                child: const Text("Print Kitchen Ticket"))
+                child: const Text("Print Kitchen Ticket")),
+            Center(
+              child: Text('Ticket printed: $_isOfflineTicketPrinted'),
+            ),
+            ElevatedButton(
+                onPressed: () {
+                  printOfflineTicket();
+                },
+                child: const Text("Print Offline Ticket"))
           ],
         ),
       ),

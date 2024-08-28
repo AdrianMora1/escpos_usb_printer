@@ -527,6 +527,92 @@ bool print_json_kitchen_ticket(const std::string &json_str) {
     return true;
 }
 
+bool print_json_offline_ticket(const std::string &json_str) {
+    auto json = nlohmann::json::parse(json_str);
+
+    std::string branch_info = center_text("Sucursal: " + json["branch"]["name"].get<std::string>()) + "\n\n";
+    write_text_to_printer(branch_info);
+
+    print_text_with_centered_last_line("Direcci\xC3\xB3n: " + json["branch"]["address"].get<std::string>());
+
+    // Print Order Number
+    std::string order_number;
+    if (json["is_offline"].get<bool>())
+    {
+        // if is_offline is true the field is called Folio
+        order_number = "\n\nFolio: #" + std::to_string(json["order"].get<int>()) + "\n\n";
+    }
+    else
+    {
+        // if is_offline is false the field is called Orden
+        order_number = "\n\nOrden: #" + std::to_string(json["order"].get<int>()) + "\n\n";
+    }
+    write_text_to_printer(order_number);
+
+    write_text_to_printer(ROW_MIDDLE_LINES);
+
+    write_text_to_printer("Producto             Cantidad             Precio\n\n");
+
+    // Print Products
+    for (const auto &product : json["products"])
+    {
+        std::ostringstream line_stream;
+
+        std::string productName = product["product_name"].get<std::string>();
+        int realLengthProductName = countCharacters(productName);
+
+        int widthAdjustment = width_name - (realLengthProductName - static_cast<int>(productName.length()));
+        int adjustedWidthName = (std::max)(widthAdjustment, 0);
+
+        line_stream << std::left << std::setw(adjustedWidthName) << productName
+                    << std::left << std::setw(width_quantity) << product["quantity"].get<int>();
+
+        // Creamos un nuevo stringstream para el precio con el signo $
+        std::ostringstream price_stream;
+        price_stream << "$" << std::fixed << std::setprecision(2) << product["price"].get<double>();
+        std::string price_with_symbol = price_stream.str();
+
+        // Ajustamos el precio a la derecha, teniendo en cuenta la longitud del signo $
+        // Restamos 1 del ancho total porque el signo $ no debe ocupar espacio adicional
+        line_stream << std::right << std::setw(width_price) << price_with_symbol;
+
+        // Finalizamos la linea con un salto de linea
+        line_stream << "\n\n";
+
+        // Enviamos la linea completa al impresor
+        write_text_to_printer(line_stream.str());
+    }
+    write_text_to_printer("\n\n");
+    write_text_to_printer(ROW_MIDDLE_LINES);
+    write_text_to_printer("\n\n");
+    // Print Total
+    std::ostringstream total_stream;
+    const std::string total_label = "Total: $"; // Etiqueta para el total.
+
+    // Aqui formateamos el total como un string con dos decimales.
+    std::ostringstream price_stream;
+    price_stream << std::fixed << std::setprecision(2) << json["total"].get<double>();
+    std::string price_with_symbol = price_stream.str();
+
+    // Calculamos el ancho que ocupara el precio y el "Total: $" juntos.
+    size_t total_length = total_label.length() + price_with_symbol.length();
+
+    // Asegurarse de que la linea total, incluyendo el "Total:", el precio y los espacios adicionales, no exceda los 48 caracteres.
+    total_stream << std::right << std::setw(48 - total_length) << "" << total_label << price_with_symbol << "\n";
+
+    // Finalmente, enviamos la linea del total al impresor.
+    write_text_to_printer(total_stream.str());
+
+    std::vector<uint8_t> cmdFeedPaper = composeCmdFeedPaper(15);
+    write_to_printer(cmdFeedPaper);
+
+    std::vector<uint8_t> cmdCut = composeCmdCut(1);
+
+    write_to_printer(cmdCut);
+
+    return true;
+}
+
 
 // Function to determine if a pixel's color should be printed
 bool should_print_color(uint32_t col)
@@ -734,6 +820,25 @@ bool PrintKitchenTicket(std::vector<uint8_t> imageBytes, std::string json)
     }
 }
 
+bool PrintOfflineTicket(std::vector<uint8_t> imageBytes, std::string json)
+{
+    if (loadImageAndPrint(imageBytes) == true)
+    {
+        if (print_json_offline_ticket(json) == true)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        return false;
+    }
+}
+
 namespace escpos_usb_printer
 {
 
@@ -835,6 +940,67 @@ namespace escpos_usb_printer
             }
         }
         else if (method_call.method_name().compare("printKitchenTicket") == 0)
+        {
+            {
+                if (isUsbServiceInitialized == false)
+                {
+                    isUsbServiceInitialized = InitializeUsbService();
+
+                    if (isUsbServiceInitialized == false)
+                    {
+                        result->Error(
+                            "1000",
+                            "Printer usb service is not initialized",
+                            flutter::EncodableValue("Make sure that the printer is ON and connected to this device"));
+                        return;
+                    }
+                }
+                else
+                {
+                    const auto *args = std::get_if<flutter::EncodableMap>(method_call.arguments());
+                    if (!args)
+                    {
+                        result->Error("InvalidArguments", "Expected map as argument");
+                        return;
+                    }
+                    std::vector<uint8_t> imageBytes;
+                    auto imageIt = args->find(flutter::EncodableValue("image"));
+                    const auto &imageVariant = imageIt->second;
+                    if (std::holds_alternative<std::vector<uint8_t>>(imageVariant))
+                    {
+                        imageBytes = std::get<std::vector<uint8_t>>(imageVariant);
+                    }
+                    else
+                    {
+                        result->Error("InvalidArguments", "Expected image list of bytes as argument");
+                    }
+
+                    auto jsonIt = args->find(flutter::EncodableValue("json"));
+                    if (jsonIt == args->end() || !std::holds_alternative<std::string>(jsonIt->second))
+                    {
+                        result->Error("InvalidArguments", "Expected JSON string as argument");
+                        return;
+                    }
+
+                    const std::string &jsonStr = std::get<std::string>(jsonIt->second);
+                    try
+                    {
+                        bool success = PrintKitchenTicket(imageBytes, jsonStr);
+                        result->Success(flutter::EncodableValue(success));
+                    }
+                    catch (const nlohmann::json::parse_error &e)
+                    {
+                        std::cerr << "JSON parsing error: " << e.what() << '\n';
+                        result->Error("InvalidArguments", "Error parsering the JSON");
+                    }
+                    catch (const nlohmann::json::type_error &e)
+                    {
+                        std::cerr << "JSON type error: " << e.what() << '\n';
+                    }
+                }
+            }
+        }
+        else if (method_call.method_name().compare("printOfflineTicket") == 0)
         {
             {
                 if (isUsbServiceInitialized == false)

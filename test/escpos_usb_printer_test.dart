@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
-import 'package:flutter_test/flutter_test.dart';
 import 'package:escpos_usb_printer/escpos_usb_printer.dart';
-import 'package:escpos_usb_printer/escpos_usb_printer_platform_interface.dart';
 import 'package:escpos_usb_printer/escpos_usb_printer_method_channel.dart';
+import 'package:escpos_usb_printer/escpos_usb_printer_platform_interface.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 class MockEscposUsbPrinterPlatform
@@ -21,6 +21,11 @@ class MockEscposUsbPrinterPlatform
 
   @override
   Future<bool?> printKitchenTicket(
+          Uint8List imageBytes, Map<String, dynamic> json) =>
+      Future.value(true);
+
+  @override
+  Future<bool?> printOfflineTicket(
           Uint8List imageBytes, Map<String, dynamic> json) =>
       Future.value(true);
 
